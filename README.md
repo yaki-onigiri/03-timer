@@ -4,7 +4,7 @@
 
 ## Demo
 
-[](https://github.com/yaki-onigiri/03-timer)
+[タイマーアプリはこちら](https://yaki-onigiri.github.io/03-timer)
 
 ---
 
