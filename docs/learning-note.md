@@ -86,3 +86,90 @@ resetButton.addEventListener("click", function () {
     ・スペルミス（String や padStart）でエラーになった→ JavaScriptは大文字・小文字を区別する
 
     ・エラーが出たときはF12 → Consoleで確認することが重要
+
+## 2026/03/18
+
+### タイマー機能（カウントダウン・入力機能）の実装
+
+具体的な方法
+// 入力欄の取得
+const minutesInput = document.getElementById("minutes");
+const secondsInput = document.getElementById("secondsInput");
+
+// カウントダウン処理
+function countDown() {
+    if (seconds <= 0){
+        clearInterval(timer);
+        timer = null;
+        return;
+    }
+
+    seconds--;
+    updateDisplay();
+}
+
+// スタート処理（修正）
+startButton.addEventListener("click", function() {
+    if (timer !== null) return;
+
+    // 初回のみ入力値を反映
+    if (seconds === 0) {
+        const min = Number(minutesInput.value) || 0;
+        const sec = Number(secondsInput.value) || 0;
+
+        seconds = min * 60 + sec;
+    }
+
+    updateDisplay();
+    timer = setInterval(countDown, 1000);
+});
+
+使用したコード
+
+・document.getElementById()
+    →入力欄（分・秒）を取得するために使用
+
+・Number()
+    →入力された値(文字列)を数値に変換するために使用
+
+・if文
+    →条件によって処理を分けるために使用
+
+    if文の基本パターン（今後使う）
+        ① 単純分岐
+            if (条件) {
+                処理
+            }
+
+       ② それ以外も処理する
+            if (条件) {
+                処理A
+            } else {
+                処理B  
+            }
+
+        ③ 複数条件
+            if (条件A) {
+                処理A
+            } else if (条件B) {
+                処理B
+            }
+    (条件)に入る文字
+    ・「seconds === 0」 → true（成立） → 初期化する
+    ・「seconds !== 0」 → false（不成立） → 何もしない
+
+ポイント
+
+    ・分・秒で入力された値を「秒」に変換して扱っている
+        （例：1分30秒 → 90秒）
+
+    ・タイマー内部では「seconds（秒）」で状態を管理している
+
+    ・if (seconds === 0) によって、最初の1回だけ入力値を反映するようにしている
+        → Stop後にStartしてもリセットされず、途中から再開できる
+
+    ・countUp → countDown に変更することで、カウントダウン処理に切り替えた
+
+    ・関数名のスペルミス（countUp / countDown）でエラーが発生した
+        → Consoleのエラー文を確認することが重要
+        
