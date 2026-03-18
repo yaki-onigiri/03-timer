@@ -172,4 +172,66 @@ startButton.addEventListener("click", function() {
 
     ・関数名のスペルミス（countUp / countDown）でエラーが発生した
         → Consoleのエラー文を確認することが重要
-        
+
+### タイマー機能（アラーム音追加・動作不具合の修正）
+
+目的
+・時間終了時にアラーム音を鳴らす
+・音が鳴らない原因を特定し、正しく動作させる
+
+仕組み
+
+    ①タイマー終了を検知
+        → seconds <= 0 で判定
+    
+    ②タイマー停止
+        → clearInterval()
+    
+    ③アラーム音を再生
+        → Audioオブジェクトを使用
+
+実装コード（要点のみ）
+
+```js```
+const alarm = new Audio(（フォルダ名）/alarm.mp3);
+
+function countDown() {
+    if (seconds <= 0){
+        clearInterval(timer);
+        timer = null;
+
+        alarm.play(); // アラーム再生
+        return;
+    }
+
+    seconds--;
+    updateDisplay();
+}
+
+使用技術
+・Audio()
+    → 音声ファイルを読み込み、再生する
+
+・play()
+    → 音声を再生するメソッド
+
+・clearInterval()
+    → タイマーを停止
+
+重要ポイント
+
+・音声ファイルのパスは「正確」である必要がある
+    → 1文字でも違うと404エラーになる
+
+・GitHubにファイルが存在しないと読み込めない
+
+・ブラウザは自動再生を制限している
+    → ユーザー操作（クリックなど）が必要
+
+学んだこと
+・「動かない＝コード」ではなく
+　→ ファイル構成・パス・GitHubも確認する
+
+・Consoleエラーは必ず確認する
+
+・ローカルで動いても、本番環境では動かない場合がある

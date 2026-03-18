@@ -8,6 +8,8 @@ const ResetButton = document.getElementById("reset");
 const minutesInput = document.getElementById("minutes");
 const secondsInput = document.getElementById("secondsInput");
 
+const alarmSound = new Audio("./audio/alarm.mp3");
+
 // ２．タイマー用の変数
 let seconds = 0;
 let timer = null;
@@ -26,9 +28,16 @@ function updateDisplay() {
 // ４．タイマーを進める処理
 function countDown() {
 
-    if (seconds <= 0) {
+    if (seconds === 0) {
         clearInterval(timer);
         timer = null;
+
+        alarmSound.play().catch(error => {
+            console.log("再生エラー：", error);
+        });
+
+        alert("時間終了！");
+
         return;
     }
 
@@ -42,9 +51,20 @@ StartButton.addEventListener("click", function () {
 
     if (timer !== null) return;
 
+    alarmSound.play().then(() => {
+        alarmSound.pause();
+        alarmSound.currentTime = 0;
+    }).catch(() => {});
+
     if (seconds === 0) {
         const min = Number(minutesInput.value) || 0;
         const sec = Number(secondsInput.value) || 0;
+
+        if (sec < 0 || sec > 59) {
+            alert("秒は0～59で入力してください");
+            return;
+        }
+        //「 if (sec < 0 || sec > 59) 」と入力することでマイナス値の入力を防ぐこともできる。(/18 ②)
 
         seconds = min * 60 + sec;
     }
@@ -53,6 +73,15 @@ StartButton.addEventListener("click", function () {
 
     timer = setInterval(countDown, 1000);
         // setInterval = 指定時間ごとに処理を繰り返すコード
+    
+    StartButton.disabled = true;
+    StopButton.disabled = false;
+
+    // 入力欄のロック (/18 ②)
+    minutesInput.disabled = true;
+    secondsInput.disabled = true;
+    
+    alarmSound.load();
 });
 
 // ６．ストップ処理
@@ -62,6 +91,8 @@ StopButton.addEventListener("click", function () {
 
     timer = null;
 
+    StartButton.disabled = false;
+    StopButton.disabled = true;
 });
 
 // ７．リセット処理
@@ -78,4 +109,10 @@ ResetButton.addEventListener("click", function () {
 
     updateDisplay();
 
+    StartButton.disabled = false;
+    StopButton.disabled = true;
+
+    // 入力欄のロック解除 (/18 ②)
+    minutesInput.disabled = false;
+    secondsInput.disabled = false;
 });
