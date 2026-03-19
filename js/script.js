@@ -1,9 +1,9 @@
 // １．HTML要素を取得する処理
 const timeDisplay = document.getElementById("time");
 
-const StartButton = document.getElementById("start");
-const StopButton = document.getElementById("stop");
-const ResetButton = document.getElementById("reset");
+const startButton = document.getElementById("start");
+const stopButton = document.getElementById("stop");
+const resetButton = document.getElementById("reset");
 
 const minutesInput = document.getElementById("minutes");
 const secondsInput = document.getElementById("secondsInput");
@@ -38,16 +38,24 @@ function countDown() {
 
         alert("時間終了！");
 
+        saveState();
+
         return;
     }
 
     seconds--;
 
+    // 防御コード『範囲制限』：ズレでマイナス値になるケースを防ぐコード
+    if (seconds < 0) seconds = 0;
+
     updateDisplay();
+
+    // 保存処理
+    saveState();
 }
 
 // ５．スタートの処理
-StartButton.addEventListener("click", function () {
+startButton.addEventListener("click", function () {
 
     if (timer !== null) return;
 
@@ -66,6 +74,12 @@ StartButton.addEventListener("click", function () {
         }
         //「 if (sec < 0 || sec > 59) 」と入力することでマイナス値の入力を防ぐこともできる。(/18 ②)
 
+        if (min === 0 && sec === 0) {
+            alert("時間を入力してください");
+            return;
+        }
+        // Start時0秒スタートを防ぐためのコード
+
         seconds = min * 60 + sec;
     }
 
@@ -74,29 +88,35 @@ StartButton.addEventListener("click", function () {
     timer = setInterval(countDown, 1000);
         // setInterval = 指定時間ごとに処理を繰り返すコード
     
-    StartButton.disabled = true;
-    StopButton.disabled = false;
+    startButton.disabled = true;
+    stopButton.disabled = false;
 
     // 入力欄のロック (/18 ②)
     minutesInput.disabled = true;
     secondsInput.disabled = true;
     
     alarmSound.load();
+
+    // 保存処理
+    saveState();
 });
 
 // ６．ストップ処理
-StopButton.addEventListener("click", function () {
+stopButton.addEventListener("click", function () {
 
     clearInterval(timer);
 
     timer = null;
 
-    StartButton.disabled = false;
-    StopButton.disabled = true;
+    startButton.disabled = false;
+    stopButton.disabled = true;
+
+    // 保存処理
+    saveState();
 });
 
 // ７．リセット処理
-ResetButton.addEventListener("click", function () {
+resetButton.addEventListener("click", function () {
 
     clearInterval(timer);
     timer = null;
@@ -109,10 +129,64 @@ ResetButton.addEventListener("click", function () {
 
     updateDisplay();
 
-    StartButton.disabled = false;
-    StopButton.disabled = true;
+    startButton.disabled = false;
+    stopButton.disabled = true;
 
     // 入力欄のロック解除 (/18 ②)
     minutesInput.disabled = false;
     secondsInput.disabled = false;
+
+    // 
+    localStorage.removeItem("timerState");
 });
+
+// 保存処理
+function saveState() {
+    const data = {
+        seconds: seconds,
+        isRunning: timer !== null,
+        minutesInput: minutesInput.value,
+        secondsInput: secondsInput.value
+    };
+
+    localStorage.setItem("timerState", JSON.stringify(data));
+}
+
+// ページ読み込み時の読み込み処理
+function loadState(){
+    const saved = localStorage.getItem("timerState");
+
+    if (!saved) return;
+
+    let data;
+
+    // 例外処理の構文：プログラム実行中に発生するエラーを補足し、異常終了を防ぐ
+    try {
+        data = JSON.parse(saved);
+
+        seconds = data.seconds || 0;
+
+        minutesInput.value = data.minutesInput || "";
+        secondsInput.value = data.secondsInput || "";
+
+        updateDisplay();
+
+        // タイマー復元処理
+        if (data.isRunning && seconds > 0) {
+            timer = setInterval(countDown, 1000);
+
+            startButton.disabled = true;
+            stopButton.disabled = false;
+
+            minutesInput.disabled = true;
+            secondsInput.disabled = true;
+        }
+
+    } catch (e) {
+        console.error("データ破損:", e);
+        localStorage.removeItem("timerState");
+    }    
+}
+
+// ページ読み込み時に実行
+loadState();
