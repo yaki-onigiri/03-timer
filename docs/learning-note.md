@@ -4,288 +4,162 @@
 
 ### タイマー機能（カウントアップ）の実装
 
-具体的な方法
+▼結論（これだけ覚える）
+・秒（seconds）を状態として持つ
+・setInterval で1秒ごとに更新
+・表示は別関数で管理
 
-// HTML要素の取得
-const timeDisplay = document.getElementById("time");
-const startButton = document.getElementById("start");
-const stopButton = document.getElementById("stop");
-const resetButton = document.getElementById("reset");
+▼処理の流れ
 
-// 変数
-let seconds = 0;
-let timer = null;
+1. seconds を1ずつ増やす
 
-// 表示更新
-function updateDisplay() {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+2. updateDisplay で表示を更新
 
-    timeDisplay.textContent =
-        String(minutes).padStart(2, "0") + ":" +
-        String(remainingSeconds).padStart(2, "0");
-}
+3. setInterval で繰り返す
 
-// カウント処理
-function countUp() {
-    seconds++;
-    updateDisplay();
-}
+▼重要な設計
 
-// スタート
-startButton.addEventListener("click", function () {
-    if (timer !== null) return;
-    timer = setInterval(countUp, 1000);
-});
+・表示処理は updateDisplay() に分離する
+    → ロジック と UI を分けるため
 
-// ストップ
-stopButton.addEventListener("click", function () {
-    clearInterval(timer);
-    timer = null;
-});
+▼学び
 
-// リセット
-resetButton.addEventListener("click", function () {
-    clearInterval(timer);
-    timer = null;
-    seconds = 0;
-    updateDisplay();
-});
-
-使用したコード
-    ・document.getElementById()
-        → HTMLの要素をJavaScriptで操作するために取得
-
-    ・addEventListener("click", ...)
-        → ボタンがクリックされたときの処理を設定
-
-    ・setInterval()
-        → 一定時間ごとに処理を繰り返す（今回は1秒ごと）
-
-    ・clearInterval()
-        → 繰り返し処理を止める
-
-    ・Math.floor()
-        → 小数点以下を切り捨てて「分」を計算
-
-    ・%（余り）
-        → 秒を求めるために使用
-
-    ・padStart()
-        → 表示を2桁（例：01）にそろえる
-
-ポイント
-    ・秒数はそのまま表示するのではなく、計算して「分」と「秒」に分けている
-
-    ・updateDisplay() という関数で表示の更新をまとめている（まだ完全には理解できていないが重要そう）
-
-    ・setInterval() を使うと自動で処理が繰り返される
-
-    ・timer という変数を使って、タイマーが動いているかどうかを管理している
-
-    ・スペルミス（String や padStart）でエラーになった→ JavaScriptは大文字・小文字を区別する
-
-    ・エラーが出たときはF12 → Consoleで確認することが重要
+・setInterval は「自動ループ」
+・timer変数で「動いているか」を管理する
+・JSは大文字・小文字を区別（ミスでエラーになる）
 
 ## 2026/03/18
 
-### タイマー機能（カウントダウン・入力機能）の実装
+### カウントダウン・入力機能
 
-具体的な方法
-// 入力欄の取得
-const minutesInput = document.getElementById("minutes");
-const secondsInput = document.getElementById("secondsInput");
+▼結論
+・入力値（分・秒）は「秒」に変換して管理する
+・状態は seconds に一本化
 
-// カウントダウン処理
-function countDown() {
-    if (seconds <= 0){
-        clearInterval(timer);
-        timer = null;
-        return;
-    }
+▼重要ロジック
+    seconds = min * 60 + sec;
 
-    seconds--;
-    updateDisplay();
-}
+▼設計ポイント
+・if (seconds === 0)
+    → 初回のみ入力値を反映するため
 
-// スタート処理（修正）
-startButton.addEventListener("click", function() {
-    if (timer !== null) return;
+・Stop後に再開できる理由
+    → seconds を保持しているから
 
-    // 初回のみ入力値を反映
-    if (seconds === 0) {
-        const min = Number(minutesInput.value) || 0;
-        const sec = Number(secondsInput.value) || 0;
+▼バグ
+・関数名ミス（countUp / countDown）
+    → Console で特定
 
-        seconds = min * 60 + sec;
-    }
+### アラーム
 
-    updateDisplay();
-    timer = setInterval(countDown, 1000);
-});
+■アラーム音がならない問題
 
----
+▼原因
+・ファイルパスミス
+・GitHubに音声ファイルが無い
+・ブラウザの自動再生制限
 
-使用したコード
+▼解決
+・パスを正しく設定
+・ユーザー操作後に再生する
 
-・document.getElementById()
-    →入力欄（分・秒）を取得するために使用
-
-・Number()
-    →入力された値(文字列)を数値に変換するために使用
-
-・if文
-    →条件によって処理を分けるために使用
-
-    if文の基本パターン（今後使う）
-        ① 単純分岐
-            if (条件) {
-                処理
-            }
-
-       ② それ以外も処理する
-            if (条件) {
-                処理A
-            } else {
-                処理B  
-            }
-
-        ③ 複数条件
-            if (条件A) {
-                処理A
-            } else if (条件B) {
-                処理B
-            }
-    (条件)に入る文字
-    ・「seconds === 0」 → true（成立） → 初期化する
-    ・「seconds !== 0」 → false（不成立） → 何もしない
-
----
-
-ポイント
-
-    ・分・秒で入力された値を「秒」に変換して扱っている
-        （例：1分30秒 → 90秒）
-
-    ・タイマー内部では「seconds（秒）」で状態を管理している
-
-    ・if (seconds === 0) によって、最初の1回だけ入力値を反映するようにしている
-        → Stop後にStartしてもリセットされず、途中から再開できる
-
-    ・countUp → countDown に変更することで、カウントダウン処理に切り替えた
-
-    ・関数名のスペルミス（countUp / countDown）でエラーが発生した
-        → Consoleのエラー文を確認することが重要
-
-### タイマー機能（アラーム音追加・動作不具合の修正）
-
-目的
-・時間終了時にアラーム音を鳴らす
-・音が鳴らない原因を特定し、正しく動作させる
-
-仕組み
-
-    ①タイマー終了を検知
-        → seconds <= 0 で判定
-    
-    ②タイマー停止
-        → clearInterval()
-    
-    ③アラーム音を再生
-        → Audioオブジェクトを使用
-
-実装コード（要点のみ）
-
-```js```
-const alarm = new Audio(（フォルダ名）/alarm.mp3);
-
-function countDown() {
-    if (seconds <= 0){
-        clearInterval(timer);
-        timer = null;
-
-        alarm.play(); // アラーム再生
-        return;
-    }
-
-    seconds--;
-    updateDisplay();
-}
-
-使用技術
-・Audio()
-    → 音声ファイルを読み込み、再生する
-
-・play()
-    → 音声を再生するメソッド
-
-・clearInterval()
-    → タイマーを停止
-
-重要ポイント
-
-・音声ファイルのパスは「正確」である必要がある
-    → 1文字でも違うと404エラーになる
-
-・GitHubにファイルが存在しないと読み込めない
-
-・ブラウザは自動再生を制限している
-    → ユーザー操作（クリックなど）が必要
-
-学んだこと
-・「動かない＝コード」ではなく
-　→ ファイル構成・パス・GitHubも確認する
-
-・Consoleエラーは必ず確認する
-
-・ローカルで動いても、本番環境では動かない場合がある
+▼学び
+・「動かない原因＝コード」だけではない
+・ファイル構成・環境も確認する
 
 ## 2026/03/19
 
-### 学習した内容・実装した内容
+### localStorageで状態保存
 
-タイマーアプリにlocalStorage機能を追加し、ページリロード後も状態を保持できるようにした。
+▼結論
+・状態はまとめて保存する
+・JSONで変換する必要がある
 
-目的
+▼保存データ
+・seconds
+・動作状態（isRunning）
+・入力値
 
-- ページをリロードしてもタイマーの状態（残り時間・動作状態・入力値）を保持するため
+▼重要ポイント
+・localStorage は文字列のみ
+・JSON.parse はエラーになる可能性あり → try-catch 必須
 
-- 『状態管理の基本的な考え方』を理解するため
+▼学び
+・状態は「データ」として扱う
+・UI状態も含めて管理する必要がある。
 
----
+▼課題
+・リロード中の時間ズレあり ⇒ つぎは「終了時刻ベース」にする
 
-使用したコード・技術
+## 2026/03/21
 
-■ 保存処理
-    - localStorage.setItem()
-    - JSON.stringify()
+### 精度問題の改善（終了時刻ベース）
 
-■ 読み込み処理
-    - localStorage.getItem()
-    - JSON.parse()
+▼結論
+・タイマーは「秒を減らす」のではなく、「終了時刻との差」で計算する
 
-■ 例外処理
-    - try-catch
-        →データが壊れていた場合でもエラーで止まらないようにする
+▼なぜ変更したか（問題）
+    従来の方法：seconds--;
+    この方法だと、
+        ・setInterval のズレが蓄積する
+        ・タブ非アクティブで遅れる
+        ・リロードで時間がズレる
+    ⇒ 正確な時間にならない
 
----
+▼新しい考え方
+    残り時間 ＝ 終了時刻 ー 現在時刻
 
-重要なポイント
+▼コアロジック（これだけ覚える）
+        ・const diff = endTime - Date.now();
+        ・const remaining = Math.ceil(diff / 1000);
+    ここがすべて
 
-- localStorage は「文字列しか保存できない」
-- オブジェクトはそのまま保存できないため、JSON形式に変換する必要がある
-- JSON.parse でエラーが発生する可能性があるため、try-catch で囲む必要がある
-- 状態は1つではなく「複数の情報（時間・状態・入力値）」としてまとめて管理する
+▼処理の流れ
+    ①スタート時
+        終了時刻を決める：endTime = Date.now() + 秒数 * 1000;
 
----
+    ②カウント中
+        毎回「残り時間」を再計算：seconds = remaining;
+    
+    ③終了判定
+        if (diff <= 0)
+            秒ではなく「ミリ秒」で判定するのが重要
 
-学んだこと
+▼なぜうまくいくのか
+・setInterval がズレても関係ない
+・常に「現在時刻」ベースで再計算している
+    ☞ズレがリセットされ続ける
 
-- タイマーの状態を「データ」として扱うことで、リロード後も復元できることを理解した
-- try-catch を使うことで、エラーが発生してもアプリが停止しない仕組みを作れることを学んだ
-- UIの状態（入力欄の有効/無効）も含めて制御する必要があるとわかった
+▼ハマったポイント
+    ①seconds を直接減らしていた
+        → 古い設計と混ざってバグ発生のため
 
-次に意識すること
+    ②remaining の再代入ミス
+    ✖ remaining = endTime -Date.now(); //
+        → seconds に代入しないと表示が更新されない
+    
+    ③初回表示がズレる問題
+        → setInterval は1秒後に実行されるため
+        
+        解決：countDown(); をStart直後に1回実行
+    
+    ④00:01 で止まる問題
+        原因：秒ベースで判定していた
 
-- 現在の実装では、リロード中の時間経過が反映されないため、時間がズレる
-- 今後は「終了時刻」を基準にした実装に改善する必要がある
+        解決：if (diff <= 0)
+
+▼学び
+・「状態を更新する」より「状態を計算する」方が正確
+・秒（seconds）は「結果」であって本体ではない
+    ☞本体は「時間（Date.now）」側
+
+▼今後に活きる理解
+    この考え方は
+        ・タイマー
+        ・カウントダウン
+        ・有効期限管理
+        ・セッション管理
+    全部に使える
+
+▼一言まとめ
+    時間は減らさずに、差で計算せよ

@@ -14,6 +14,11 @@ const alarmSound = new Audio("./audio/alarm.mp3");
 let seconds = 0;
 let timer = null;
 
+// 精度問題の改善（26/03/21）
+let endTime = null;
+
+let totalSeconds;
+
 // ３．時間表示を更新する関数
 function updateDisplay() {
 
@@ -28,22 +33,37 @@ function updateDisplay() {
 // ４．タイマーを進める処理
 function countDown() {
 
-    if (seconds === 0) {
+    const diff = endTime - Date.now();
+
+    // 精度問題の改善（26/03/21）
+    const remaining = Math.ceil(diff / 1000);
+
+    console.log("remaining:", remaining);
+
+    if (diff <= 0) {
         clearInterval(timer);
         timer = null;
+
+        seconds = 0;
+        updateDisplay();
 
         alarmSound.play().catch(error => {
             console.log("再生エラー：", error);
         });
 
-        alert("時間終了！");
+        setTimeout(() => {
+            console.log("時間終了！");
+        }, 0);
 
         saveState();
 
         return;
     }
 
-    seconds--;
+    // 精度問題の改善（26/03/21）
+    // remaining = endTime - Date.now()
+
+    seconds = remaining;
 
     // 防御コード『範囲制限』：ズレでマイナス値になるケースを防ぐコード
     if (seconds < 0) seconds = 0;
@@ -64,29 +84,41 @@ startButton.addEventListener("click", function () {
         alarmSound.currentTime = 0;
     }).catch(() => {});
 
-    if (seconds === 0) {
-        const min = Number(minutesInput.value) || 0;
-        const sec = Number(secondsInput.value) || 0;
+    if (endTime === null) {
 
-        if (sec < 0 || sec > 59) {
-            alert("秒は0～59で入力してください");
-            return;
+        if (seconds > 0) {
+                // ストップ後の再開
+                totalSeconds = seconds;
+        } else {
+            // 新規スタート
+            const min = Number(minutesInput.value) || 0;
+            const sec = Number(secondsInput.value) || 0;
+                
+            if (sec < 0 || sec > 59) {
+                alert("秒は0～59で入力してください");
+                return;
+            }
+            //「 if (sec < 0 || sec > 59) 」と入力することでマイナス値の入力を防ぐこともできる。(/18 ②)
+
+            if (min === 0 && sec === 0) {
+                alert("時間を入力してください");
+                return;
+            }
+
+            totalSeconds = min * 60 + sec;
         }
-        //「 if (sec < 0 || sec > 59) 」と入力することでマイナス値の入力を防ぐこともできる。(/18 ②)
 
-        if (min === 0 && sec === 0) {
-            alert("時間を入力してください");
-            return;
-        }
-        // Start時0秒スタートを防ぐためのコード
+        endTime = Date.now() + totalSeconds * 1000;
 
-        seconds = min * 60 + sec;
     }
+
+    // Start時に表示だけ先に作る（26/03/21）
+    seconds = totalSeconds;
 
     updateDisplay();
 
     timer = setInterval(countDown, 1000);
-        // setInterval = 指定時間ごとに処理を繰り返すコード
+    // setInterval = 指定時間ごとに処理を繰り返すコード
     
     startButton.disabled = true;
     stopButton.disabled = false;
@@ -105,8 +137,14 @@ startButton.addEventListener("click", function () {
 stopButton.addEventListener("click", function () {
 
     clearInterval(timer);
-
     timer = null;
+
+    // 精度問題の改善（26/03/21）
+    const remaining = Math.floor((endTime - Date.now()) / 1000);
+    seconds = remaining > 0 ? remaining : 0;
+
+    endTime = null;
+    // （26/03/21）ここまで
 
     startButton.disabled = false;
     stopButton.disabled = true;
@@ -118,9 +156,14 @@ stopButton.addEventListener("click", function () {
 // ７．リセット処理
 resetButton.addEventListener("click", function () {
 
+    // 実行中の処理停止
     clearInterval(timer);
     timer = null;
 
+    // 「時間基準」を完全破棄するためのコード
+    endTime = null;
+
+    // 表示リセット用
     seconds = 0;
 
     minutesInput.value = "";
@@ -143,7 +186,9 @@ resetButton.addEventListener("click", function () {
 // 保存処理
 function saveState() {
     const data = {
-        seconds: seconds,
+        // 精度問題の改善（26/03/21）
+        endTime: endTime,
+
         isRunning: timer !== null,
         minutesInput: minutesInput.value,
         secondsInput: secondsInput.value
@@ -158,17 +203,22 @@ function loadState(){
 
     if (!saved) return;
 
-    let data;
-
     // 例外処理の構文：プログラム実行中に発生するエラーを補足し、異常終了を防ぐ
     try {
-        data = JSON.parse(saved);
+        const data = JSON.parse(saved);
 
-        seconds = data.seconds || 0;
+        // 精度問題の改善（26/03/21）
+        endTime = data.endTime || null;
 
         minutesInput.value = data.minutesInput || "";
         secondsInput.value = data.secondsInput || "";
 
+        // 精度問題の改善（26/03/21）
+        if (endTime) {
+            const remaining = Math.floor((endTime - Date.now()) / 1000);
+            seconds = remaining > 0 ? remaining : 0;
+        }
+        
         updateDisplay();
 
         // タイマー復元処理
