@@ -1,6 +1,12 @@
 // １．HTML要素を取得する処理
 const timeDisplay = document.getElementById("time");
 
+const progressBar = document.getElementById("progressBar")
+    // 視覚的にどれくらい進んだかを示すコード②（/23）
+
+const message = document.getElementById("message");
+    // 完了時にメッセージ表示（アラート以外）②（/23）
+
 const startButton = document.getElementById("start");
 const stopButton = document.getElementById("stop");
 const resetButton = document.getElementById("reset");
@@ -28,6 +34,30 @@ function updateDisplay() {
     timeDisplay.textContent = 
         String(minutes).padStart(2, "0") + ":" +
         String(remainingSeconds).padStart(2, "0");
+
+    // 残り時間に応じた UI変化 を追加（/23）
+    // 残り1分 → オレンジ
+    // 残り10秒 → 赤
+    if (seconds <= 10) {
+        timeDisplay.style.color = "red";
+    } else if (seconds <= 60) {
+        timeDisplay.style.color = "orange";
+    } else {
+        timeDisplay.style.color = "black";
+    }
+
+    // 視覚的にどれくらい進んだかを示すコード④（/23）
+    updateProgress();
+}
+
+// 視覚的にどれくらい進んだかを示すコード③（/23）
+function updateProgress() {
+    if (!endTime || !totalSeconds) return;
+
+    const remaining = seconds;
+    const percent = (1 - remaining / totalSeconds) * 100;
+
+    progressBar.style.width = percent + "%";
 }
 
 // ４．タイマーを進める処理
@@ -46,6 +76,8 @@ function countDown() {
 
         seconds = 0;
         updateDisplay();
+
+        message.textContent = "";
 
         alarmSound.play().catch(error => {
             console.log("再生エラー：", error);
@@ -123,6 +155,9 @@ startButton.addEventListener("click", function () {
     startButton.disabled = true;
     stopButton.disabled = false;
 
+    startButton.textContent = "Start";
+        // ボタン切り替え①（/23）
+
     // 入力欄のロック (/18 ②)
     minutesInput.disabled = true;
     secondsInput.disabled = true;
@@ -148,6 +183,9 @@ stopButton.addEventListener("click", function () {
 
     startButton.disabled = false;
     stopButton.disabled = true;
+
+    startButton.textContent = "Resume";
+        // ボタン切り替え②（/23）
 
     // 保存処理
     saveState();
@@ -175,6 +213,9 @@ resetButton.addEventListener("click", function () {
     startButton.disabled = false;
     stopButton.disabled = true;
 
+    startButton.textContent = "Pause";
+        // ボタン切り替え①（/23）
+
     // 入力欄のロック解除 (/18 ②)
     minutesInput.disabled = false;
     secondsInput.disabled = false;
@@ -186,7 +227,7 @@ resetButton.addEventListener("click", function () {
 // 保存処理
 function saveState() {
     const data = {
-        // 精度問題の改善（26/03/21）
+        // 精度問題の改善（/21）
         endTime: endTime,
 
         isRunning: timer !== null,
@@ -207,13 +248,13 @@ function loadState(){
     try {
         const data = JSON.parse(saved);
 
-        // 精度問題の改善（26/03/21）
+        // 精度問題の改善（/21）
         endTime = data.endTime || null;
 
         minutesInput.value = data.minutesInput || "";
         secondsInput.value = data.secondsInput || "";
 
-        // 精度問題の改善（26/03/21）
+        // 精度問題の改善（/21）
         if (endTime) {
             const remaining = Math.floor((endTime - Date.now()) / 1000);
             seconds = remaining > 0 ? remaining : 0;
