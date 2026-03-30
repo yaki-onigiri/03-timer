@@ -225,3 +225,147 @@
 
 ▼ 一言まとめ
     状態をむやみに上書きすると、挙動が壊れる
+
+## 2026/03/30
+
+### 状態管理（Stateオブジェクト）の導入
+
+▼ 目的
+    複数の変数（seconds・timer・endTime など）をバラバラに管理していた状態をまとめ、バグを防ぐため。
+
+▼ 仕組み
+    アプリの状態（残り時間・終了時刻・タイマーの状態など）を1つのオブジェクトにまとめることで、「どこに何の値があるか」を明確にする。
+
+▼ 具体的な方法
+
+    今まで
+    ```JS
+        let seconds = 0;
+        let timer = null;
+        let endTime = null;
+
+    修正後
+        const state = {
+            remainingSeconds: 0,
+            totalSeconds: 0,
+            endTime: null,
+            timerId: null,
+            isRunning: false
+        };
+    すべての変数を「state.○○」で扱うように変更する。
+
+▼ 使用したコード
+    ・オブジェクト（state）
+    ・プロパティ管理（state.remainingSeconds など）
+
+▼ 重要なポイント
+    ・変数をバラバラに持たない
+    ・必ず state 経由でアクセスする
+    ・旧変数（seconds など）を残さない
+
+▼ 学んだこと
+    状態を1つにまとめることで、バグの原因を減らせることを理解した。
+    特に「どこで値が変わったか」を追いやすくなる。
+
+---
+
+### UI更新の責務分離（render関数の分割）
+
+▼ 目的
+    “1つの関数”に“複数の役割”があると修正しづらいため、機能ごとに分ける。
+
+▼ 仕組み
+    「表示する処理」を細かく分割し、updateDisplay から呼び出す形にする。
+
+▼ 具体的な方法
+    function updateDisplay() {
+        renderTime();
+        renderColor();
+        renderProgress();
+    }
+        ⇓　それぞれの役割ごとに関数を作る
+    function renderTime() {}
+    function renderColor() {}
+    function renderProgress() {}
+
+▼ 使用したコード・技術
+    ・関数分割
+    ・DOM操作（textContent / style変更）
+
+▼ 重要なポイント
+    ・1つの関数に役割を詰め込みすぎない
+    ・「何をする関数か」が名前でわかるようにする
+
+▼ 学んだこと
+    コードを分割すると「どこを修正すればいいか」がわかりやすくなる。実務ではこの書き方が重要だと感じた。
+
+### setInterval → setTimeout（tick関数）への変更
+
+▼ 目的
+    タイマーのズレや不安定さを減らすため。
+
+▼ 仕組み
+    setInterval ではなく、setTimeout で1回ずつ処理を呼び出すことで、処理のズレが積み重ならないようにする。
+
+▼ 具体的な方法
+    function tick() {
+        if (!state.isRunning) return;
+
+        countDown();
+
+        if (state.remainingSeconds <= 0) return;
+
+        state.timerId = setTimeout(tick, 1000);
+    }
+
+    start時：
+        state.isRunning = true;
+        tick();
+
+    stop時：
+        clearTimeout(state.timerId);
+        state.timerId = null;
+        state.isRunning = false;
+    
+▼ 使用したコード・技術
+    ・setTimeout
+    ・clearTimeout
+    ・再帰処理（関数が自分自身を呼ぶ）
+
+▼ 重要なポイント
+    ・setInterval はズレが発生する
+    ・setTimeout は「処理後に次を予約」するので安定
+    ・isRunning で制御しないと止まらなくなる
+
+▼ 学んだこと
+    『非同期処理』は「どこで止めるか」が重要。
+    tick関数のように「条件を見て次を呼ぶ」設計が必要だと理解した。
+
+### 非同期処理のバグ修正（tick の停止条件）
+
+▼ 目的
+    0秒を過ぎてもタイマーが止まらないバグを修正する。
+
+▼ 仕組み
+    tick関数の中で条件をチェックし、必要な場合のみ次の処理を予約する。
+
+▼ 具体的な方法
+    tick関数内に以下のコードを「countDown();」の下に入力。
+        if (state.remainingSeconds <= 0) return;
+
+    また、start時の順番を修正。
+        state.isRunning = true;
+        tick();
+
+▼ 使用したコード・技術
+    ・条件分岐（if）
+    ・非同期制御
+
+▼ 重要なポイント
+    ・tick は「無条件にループさせない」
+    ・状態（isRunning）を先に更新する
+    ・順番ミスで動かなくなる
+
+▼ 学んだこと
+    『非同期処理』は「実行順」がとても重要。
+    順番を間違えると動かなくなることを実体験で理解した。
