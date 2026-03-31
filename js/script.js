@@ -1,7 +1,7 @@
-// １．HTML要素を取得する処理
+// １．DOM取得（HTML要素を取得する処理）
 const timeDisplay = document.getElementById("time");
 
-const progressBar = document.getElementById("progressBar")
+const progressBar = document.getElementById("progressBar");
     // 視覚的にどれくらい進んだかを示すコード②（/23）
 
 const message = document.getElementById("message");
@@ -16,7 +16,10 @@ const secondsInput = document.getElementById("secondsInput");
 
 const alarmSound = new Audio("./audio/alarm.mp3");
 
-// 状態管理（State）
+startButton.disabled = true;
+stopButton.disabled = true;
+
+// State（状態管理）
 const state = {
     remainingSeconds: 0,
     totalSeconds: 0,
@@ -26,7 +29,7 @@ const state = {
 };
 
 
-// ３．時間表示を更新する関数
+// UI描画系（時間表示を更新する関数）
 function updateDisplay() {
 
     renderTime();
@@ -37,7 +40,6 @@ function updateDisplay() {
     renderProgress();
 }
 
-// 時間表示
 function renderTime() {
 
     const minutes = Math.floor(state.remainingSeconds / 60);
@@ -72,7 +74,55 @@ function renderProgress() {
     progressBar.style.width = percent + "%";
 }
 
-// setInterval依存の改善
+// バリデーション
+function validateInput(min, sec) {
+    if (!Number.isInteger(min) || !Number.isInteger(sec)) {
+        return "整数で入力してください";
+    }
+
+    if (min < 0 || min > 99) {
+        return "分は0～99で入力してください";
+    }
+
+    if (sec < 0 || sec > 59) {
+        return "秒は0～59で入力してください";
+    }
+
+    if (min === 0 && sec === 0) {
+        return "時間を入力してください";
+    }
+
+    if (min * 60 + sec > 3600) {
+        return "最大60分までです";
+    }
+
+    return null;
+}
+
+// リアルタイムバリデーション②（入力時点でエラー表示）
+function validateRealtime() {
+    const min = Number(minutesInput.value);
+    const sec = Number(secondsInput.value);
+
+    if (minutesInput.value === "" && secondsInput.value === "") {
+        message.textContent = "";
+        startButton.disabled = true;
+        return;
+    }
+
+    if (Number.isNaN(min) || Number.isNaN(sec)) {
+        message.textContent = "数値を入力してください";
+        startButton.disabled = true;
+        return;
+    }
+
+    const error = validateInput(min, sec);
+
+    message.textContent = error || "";
+    startButton.disabled = !!error;
+}
+
+// ロジック系（setInterval依存の改善）
 function tick() {
     if (!state.isRunning) return;
 
@@ -90,8 +140,6 @@ function countDown() {
 
     // 精度問題の改善（26/03/21）
     const remaining = Math.ceil(diff / 1000);
-
-    console.log("remaining:", remaining);
 
     if (diff <= 0) {
         clearTimeout(state.timerId);
@@ -131,7 +179,7 @@ function countDown() {
     saveState();
 }
 
-// ５．スタートの処理
+// イベント
 startButton.addEventListener("click", function () {
 
     if (state.timerId !== null) return;
@@ -148,17 +196,19 @@ startButton.addEventListener("click", function () {
                 state.totalSeconds = state.remainingSeconds;
         } else {
             // 新規スタート
-            const min = Number(minutesInput.value) || 0;
-            const sec = Number(secondsInput.value) || 0;
-                
-            if (sec < 0 || sec > 59) {
-                alert("秒は0～59で入力してください");
+            const min = Number(minutesInput.value);
+            const sec = Number(secondsInput.value);
+
+            // NaN対策
+            if (Number.isNaN(min) || Number.isNaN(sec)) {
+                message.textContent = "数値を入力してください";
                 return;
             }
-            //「 if (sec < 0 || sec > 59) 」と入力することでマイナス値の入力を防ぐこともできる。(/18 ②)
 
-            if (min === 0 && sec === 0) {
-                alert("時間を入力してください");
+            const error = validateInput(min, sec);
+
+            if (error) {
+                message.textContent = error;
                 return;
             }
 
@@ -241,10 +291,12 @@ resetButton.addEventListener("click", function () {
 
     updateDisplay();
 
+    message.textContent = "";
+
     startButton.disabled = false;
     stopButton.disabled = true;
 
-    startButton.textContent = "Pause";
+    startButton.textContent = "Start";
         // ボタン切り替え①（/23）
 
     // 入力欄のロック解除 (/18 ②)
@@ -254,6 +306,11 @@ resetButton.addEventListener("click", function () {
     // 
     localStorage.removeItem("timerState");
 });
+
+// リアルタイムバリデーション①（入力時点でエラー表示）
+minutesInput.addEventListener("input", validateRealtime);
+secondsInput.addEventListener("input", validateRealtime);
+
 
 // 保存処理
 function saveState() {
@@ -269,7 +326,7 @@ function saveState() {
     localStorage.setItem("timerState", JSON.stringify(data));
 }
 
-// ページ読み込み時の読み込み処理
+// 復元処理（ページ読み込み時の読み込み処理）
 function loadState(){
     const saved = localStorage.getItem("timerState");
 

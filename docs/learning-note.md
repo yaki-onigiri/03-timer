@@ -369,3 +369,71 @@
 ▼ 学んだこと
     『非同期処理』は「実行順」がとても重要。
     順番を間違えると動かなくなることを実体験で理解した。
+
+## 26/03/31
+
+### 入力バリデーション強化
+
+▼ 目的
+    タイマーの入力欄に対して、間違った値を入れたときにエラーを出し、不正な状態でStartできないようにすること。
+
+▼ 仕組み
+    入力された値をチェックして、
+        ①　数字として正しいか（NaNチェック）
+        ②　値として正しいか（範囲チェック）
+    の順番で確認する。
+
+    エラーがあればメッセージを表示し、Startボタンを押せないようにする。
+
+▼ 具体的な方法
+    ① 入力値を取得
+        const min = ○○(○○Input.value);
+        const sec = ○○(○○Input.value);
+
+    ②　文字かどうかをチェック（NaN対策）
+        if (Number.isNaN(min) || Number.isNaN(sec)) {
+            message.textContent = "数値を入力してください";
+            return;
+        }
+    
+    ③　validateInput関数で値チェック
+        const error = validateInput(min, sec);
+
+            if (error) {
+                message.textContent = error;
+                return;
+            }
+
+    ④ 入力中にもチェック（リアルタイム）
+        minutesInput.addEventListener("input", validateRealtime);
+        secondsInput.addEventListener("input", validateRealtime);
+            （resetButton.addEventListener の下に入力）
+        
+    ⑤ エラーがある場合はStartボタンを無効化
+        startButton.disabled = !!error;
+    
+▼ 使用したコード・技術
+    ・Number() → 入力値を数値に変換
+    ・Number.isNaN → 数値かどうかを判定
+    ・関数（validateInput） → バリデーションをまとめる
+    ・addEventListener("input") → 入力中にチェック
+    ・disabled → ボタンの 有効/無効 を制御
+
+▼ 重要なポイント
+    ・バリデーションは1ヶ所（validateInput）にまとめる
+    ・NaNチェック は validate の前に行なう
+    ・HTML と JavaScript で二重チェックする
+    ・alart ではなく画面内にエラー表示する
+    ・エラー時はそもそもボタンを押せないようにする
+
+▼ 学んだこと
+    今までは“その場に if 文を書いていた”が、
+    “関数にまとめる”ことでコードがわかりやすくなると理解した。
+
+    また、
+    ・HTML → 入力しにくくする（補助）
+    ・JS → 絶対に防ぐ（本体）
+    という役割の違いを理解した。
+
+    その他としては、
+    「動くコード」だけでなく、「整理されたコード」にすることが大事だと感じた。
