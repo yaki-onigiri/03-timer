@@ -63,6 +63,12 @@ function renderColor() {
     } else {
         timeDisplay.style.color = "black";
     }
+
+    // タイマー終了時に UI を黒に変化
+    if (!state.isRunning) {
+        timeDisplay.style.color = "black";
+        return;
+    }
 }
 
 // 視覚的にどれくらい進んだかを示すコード③（/23）
@@ -104,14 +110,23 @@ function validateRealtime() {
     const min = Number(minutesInput.value);
     const sec = Number(secondsInput.value);
 
+    // 1.未入力チェック
     if (minutesInput.value === "" && secondsInput.value === "") {
         message.textContent = "";
         startButton.disabled = true;
         return;
     }
 
+    // 2.NaNチェック
     if (Number.isNaN(min) || Number.isNaN(sec)) {
         message.textContent = "数値を入力してください";
+        startButton.disabled = true;
+        return;
+    }
+
+    // 3.0秒チェック
+    if (min === 0 && sec === 0) {
+        message.textContent = "時間を入力してください";
         startButton.disabled = true;
         return;
     }
@@ -147,10 +162,18 @@ function countDown() {
 
         state.isRunning = false;
 
-        state.remainingSeconds = 0;
+        state.endTime = null;
+
+        // 次回用に時間を保持
+        state.remainingSeconds = state.totalSeconds;
+
         updateDisplay();
 
         message.textContent = "時間終了！";
+
+        // 終了時のボタン状態を正しく戻すコード
+        startButton.disabled = false;
+        stopButton.disabled = true;
 
         alarmSound.play().catch(error => {
             console.log("再生エラー：", error);
@@ -182,18 +205,18 @@ function countDown() {
 // イベント
 startButton.addEventListener("click", function () {
 
-    if (state.timerId !== null) return;
-
-    alarmSound.play().then(() => {
-        alarmSound.pause();
-        alarmSound.currentTime = 0;
-    }).catch(() => {});
+    if (state.isRunning) return;
 
     if (state.endTime === null) {
 
-        if (state.remainingSeconds > 0) {
-                // ストップ後の再開
+        if (state.remainingSeconds > 0 && state.remainingSeconds < state.totalSeconds) {
+                // ストップ後の再開（Stop → Resume）
                 state.totalSeconds = state.remainingSeconds;
+
+        } else if (state.totalSeconds > 0) {
+            // 終了後、もしくはすでに設定済み
+            state.remainingSeconds = state.totalSeconds;
+
         } else {
             // 新規スタート
             const min = Number(minutesInput.value);
@@ -216,12 +239,12 @@ startButton.addEventListener("click", function () {
             state.remainingSeconds = state.totalSeconds;
         }
 
+        // 音リセットのためのコード
+        alarmSound.pause();
+        alarmSound.currentTime = 0;
+
         state.endTime = Date.now() + state.totalSeconds * 1000;
-
     }
-
-    // Start時に表示だけ先に作る（26/03/21）
-    state.remainingSeconds = state.totalSeconds;
 
     updateDisplay();
 
@@ -238,11 +261,15 @@ startButton.addEventListener("click", function () {
     // 入力欄のロック (/18 ②)
     minutesInput.disabled = true;
     secondsInput.disabled = true;
-    
-    alarmSound.load();
 
     // 保存処理
     saveState();
+});
+
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !startButton.disabled) {
+        startButton.click();
+    }
 });
 
 // ６．ストップ処理

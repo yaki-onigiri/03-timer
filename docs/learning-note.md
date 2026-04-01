@@ -437,3 +437,46 @@
 
     その他としては、
     「動くコード」だけでなく、「整理されたコード」にすることが大事だと感じた。
+
+## 26/04/01
+
+▼ 目的
+    タイマー終了後に、同じ設定時間で再びStartできるようにする
+
+▼ 仕組み
+    ・タイマーは「endTime（終了時刻）」を基準に動作している
+    ・remainingSeconds = 表示用、totalSeconds = 元の設定時間
+    ・終了時に状態をリセットしつつ、元の時間は保持することで再利用できる
+
+▼ 具体的な方法
+    １.終了時（countDown内）に以下を実行
+        ・state.endTime = null にして「停止状態」にする
+        ・state.remainingSeconds = state.totalSeconds に戻す
+
+    ２.Start時に
+        ・endTime が null の場合のみ新しく開始する
+        ・remainingSeconds を使って再スタートできる状態にする
+    
+    ３.Audioの競合を防ぐ
+        ・load() を使わない
+        ・pause() + currentTime = 0 でリセットする
+
+▼ 使用したコード・技術
+    ・Date.now() を使った時間差分計算（endTimeベース）
+    ・stateオブジェクトによる状態管理
+    ・setTimeout による再帰的タイマー処理
+    ・Audio API（play / pause / currentTime）
+    ・localStorage による状態保存・復元
+    ・入力バリデーション（Number.isNaN, Number.isInteger）
+
+▼ 重要なポイント
+    ・endTime が null かどうかで「動いているか」を判定している
+    ・remainingSeconds と totalSeconds の役割を分けることが重要
+    ・終了時に endTime をリセットしないと再スタートできない
+    ・Audioは非同期処理なので競合（play と load）に注意する
+
+▼ 学んだこと
+    ・状態管理の1つの値（endTime）でアプリ全体の挙動が変わる
+    ・UIの見た目と内部状態を一致させることが重要
+    ・「再開」と「再スタート」はロジックとして分けて考える必要がある
+    ・ブラウザのAudio操作は想定外のエラーが出やすく、設計が重要

@@ -533,3 +533,38 @@
 感想
     最初は if文 をその場に書くだけだったが、
     関数にまとめることで、コードの見通しが良くなったと感じた。
+
+## 2026/04/01
+
+目的
+    タイマー終了後に同じ時間で再スタートできるようにする
+
+実装
+    ・終了時に remainingSeconds を totalSeconds に戻す
+    ・endTime を null にリセット
+    ・Start時の分岐ロジックを調整
+
+実装の流れ
+    ・終了時の状態を確認
+    ・remainingSeconds が 0 のままになっていることを確認
+    ・totalSeconds を再利用する形に変更
+    ・endTime をリセットして再スタート可能に修正
+
+発生したバグ
+    ・終了時にStartを押してもタイマーが動かない
+    ・Audio再生時に AbortError が発生
+
+原因
+    ・endTime が null にリセットされていなかった
+    ・play() と load() の競合
+
+解決方法
+    ・終了時に state.endTime = null を追加
+    ・alarmSound.load() を削除し、pause + currentTime = 0 に変更
+
+学んだこと
+    ・状態管理の1つの値（endTime）で挙動が大きく変わる
+    ・ブラウザのAudioは非同期で扱う必要がある
+
+感想
+    状態管理とUIの整合性を意識する重要性を理解できた。
