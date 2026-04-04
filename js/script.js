@@ -164,8 +164,9 @@ function countDown() {
 
         state.endTime = null;
 
-        // 次回用に時間を保持
-        state.remainingSeconds = state.totalSeconds;
+        // タイマー終了時にリセットする
+        state.remainingSeconds = 0;
+        state.totalSeconds = 0;
 
         updateDisplay();
 
