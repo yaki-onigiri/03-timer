@@ -214,7 +214,7 @@ startButton.addEventListener("click", function () {
                 // ストップ後の再開（Stop → Resume）
                 state.totalSeconds = state.remainingSeconds;
 
-        } else if (state.totalSeconds > 0) {
+        } else if (state.totalSeconds > 0 && state.remainingSeconds > 0) {
             // 終了後、もしくはすでに設定済み
             state.remainingSeconds = state.totalSeconds;
 
@@ -303,15 +303,8 @@ resetButton.addEventListener("click", function () {
 
     // 実行中の処理停止
     clearTimeout(state.timerId);
-    state.timerId = null;
-
-    state.isRunning = false;
-
-    // 「時間基準」を完全破棄するためのコード
-    state.endTime = null;
-
-    // 表示リセット用
-    state.remainingSeconds = 0;
+    
+    resetState();
 
     minutesInput.value = "";
     secondsInput.value = "";
@@ -339,6 +332,19 @@ resetButton.addEventListener("click", function () {
 minutesInput.addEventListener("input", validateRealtime);
 secondsInput.addEventListener("input", validateRealtime);
 
+
+function resetState() {
+
+    // 表示リセット用
+    state.remainingSeconds = 0;
+    state.totalSeconds = 0;
+
+    // 「時間基準」を完全破棄するためのコード
+    state.endTime = null;
+
+    state.timerId = null;
+    state.isRunning = false;
+}
 
 // 保存処理
 function saveState() {

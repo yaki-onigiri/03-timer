@@ -527,3 +527,51 @@
     ・ロジックの分岐条件だけでなく、「その前提となる状態」が正しいかを確認することが重要
     ・修正方法としては、分岐を増やすよりも「状態を正しく初期化する」ほうがシンプルで安全な場合がある
     ・今回のように「いつ state をリセットするか」を意識することが、安定した動作につながる
+
+## 26/04/05
+
+### 過去のタイマー設定が再利用されるバグを修正
+
+▼ 目的
+    Reset後に新しい時間を設定した際、前回のタイマーが再利用されてしまうバグを防ぐこと
+
+▼ 仕組み
+    タイマーは以下の state で動いている：
+        ・remainingSeconds：現在の残り時間
+        ・totalSeconds：最初に設定した時間（元データ）
+        ・endTime：終了時刻
+    このうち、totalSeconds が残っていると、Start時に過去の設定が再利用される
+
+▼ 具体的な方法
+    Reset時に、タイマーの状態をすべて初期化する
+        ・remainingSeconds → 0
+        ・totalSeconds → 0
+        ・endTime  → null
+        ・timerId → null
+        ・isRunning → false
+    ⇒状態の一部ではなく「全部リセット」することが重要
+
+▼ 使用したコード・技術
+    ・function resetState() {
+        state.remainingSeconds = 0;
+        state.totalSeconds = 0;
+        state.endTime = null;
+        state.timerId = null;
+        state.isRunning = false;
+    }
+
+    ・resetButton.addEventListener("click", function () {
+        clearTimeout(state.timerId);
+        resetState();
+    });
+
+▼ 重要なポイント
+    ・totalSeconds は「タイマーの元データ」なので残すとバグになる
+    ・Resetの役割は「見た目のリセット」ではなく「状態の完全初期化」
+    ・state は複数の値が連動しているため、一部だけリセットすると不整合が起きる
+
+▼ 学んだこと
+    ・状態管理では「どの値がロジックの基準になっているか」を理解することが重要
+    ・バグの原因は「値の残り方（状態の不整合）」であることが多い
+    ・処理を1ヶ所（resetState）にまとめることで、バグの再発を防げる
+    ・「とりあえず動く」のではなく、「状態が正しく管理されているか」を意識する必要がある
