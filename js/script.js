@@ -73,7 +73,15 @@ function renderColor() {
 
 // 視覚的にどれくらい進んだかを示すコード③（/23）
 function renderProgress() {
-    if (!state.endTime || !state.totalSeconds) return;
+    if (!state.totalSeconds) {
+        progressBar.style.width = "0%";
+        return;
+    }
+
+    if (!state.remainingSeconds === 0) {
+        progressBar.style.width ="100%"
+        return;
+    }
 
     const percent = (1 - state.remainingSeconds / state.totalSeconds) * 100;
 
@@ -142,6 +150,7 @@ function tick() {
     if (!state.isRunning) return;
 
     countDown();
+
     if (state.remainingSeconds <= 0) return;
         // カウントダウン00:00 時にカウントダウンが止まる
 
@@ -166,7 +175,7 @@ function countDown() {
 
         // タイマー終了時にリセットする
         state.remainingSeconds = 0;
-        state.totalSeconds = 0;
+        // state.totalSeconds = 0;
 
         updateDisplay();
 
@@ -212,7 +221,7 @@ startButton.addEventListener("click", function () {
 
         if (state.remainingSeconds > 0 && state.remainingSeconds < state.totalSeconds) {
                 // ストップ後の再開（Stop → Resume）
-                state.totalSeconds = state.remainingSeconds;
+                // state.totalSeconds = state.remainingSeconds;
 
         } else if (state.totalSeconds > 0 && state.remainingSeconds > 0) {
             // 終了後、もしくはすでに設定済み
@@ -244,7 +253,7 @@ startButton.addEventListener("click", function () {
         alarmSound.pause();
         alarmSound.currentTime = 0;
 
-        state.endTime = Date.now() + state.totalSeconds * 1000;
+        state.endTime = Date.now() + state.remainingSeconds * 1000;
     }
 
     updateDisplay();
@@ -306,6 +315,8 @@ resetButton.addEventListener("click", function () {
     
     resetState();
 
+    progressBar.style.width = "0%";
+
     minutesInput.value = "";
     secondsInput.value = "";
         // Reset時に入力欄もクリアする処理(/18)
@@ -324,7 +335,6 @@ resetButton.addEventListener("click", function () {
     minutesInput.disabled = false;
     secondsInput.disabled = false;
 
-    // 
     localStorage.removeItem("timerState");
 });
 

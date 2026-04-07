@@ -629,3 +629,64 @@
     ・totalSeconds のような「ロジックの基準になる値」が残っていると、意図しない挙動につながる
     ・Reset処理は「見た目」ではなく「内部処理」を完全に初期化する必要がある
     ・状態初期化処理を関数にまとめることで、**バグの再発防止と可読性の向上に繋がる**
+
+## 2026/04/07
+
+発覚したバグ①
+    プログレスバーが表示されない
+
+原因
+    HTMLやJavaScriptの処理不足
+        progressBarのDOM取得 や width更新処理が不足していた
+
+解決方法
+    progressBarのHTML/CSS/JSをすべて実装
+        DOM取得 + width更新処理を追加
+
+発覚したバグ②
+    Resume時にプログレスバーがリセットされる
+
+原因
+    totalSeconds を remainingSeconds で上書きしていた
+        進捗の基準が変わり、常に0％扱いになってしまう
+
+解決方法
+    totalSeconds を変更しないように修正
+        基準地として固定
+
+発覚したバグ③
+    Resume時にカウントダウンが最初から始まる
+
+原因
+    endTimeの計算が固定だった
+        常に「初期時間」で再計算されていた
+
+解決方法
+    endTime を remainingSeconds ベースに変更
+        state.endTime = Date.now() + state.remainingSeconds * 1000;
+
+発覚したバグ④
+    タイマー終了時にプログレスバーが0に戻る
+
+原因
+    終了時に totalSeconds を0にしていた
+        renderProgressで強制的に0％にリセットされていた
+
+解決方法
+    終了時に totalSeconds を保持
+        renderProgress で100％表示に固定
+
+その他の処理
+    renderProgress を updateDisplay に統一
+    → 描画処理を一ヶ所に集約
+    → バグを発生しにくくする設計
+
+学んだこと
+    ・バグの多くは「状態の扱いミス」で起きる
+    ・totalSeconds と remainingSeconds の役割を分けることが重要
+    ・UIの不具合は計算ロジックから確認するべき
+    ・処理は“定義する”だけでなく“呼び出す”ことが必要
+    ・描画処理を分散させると不具合の原因になる
+
+    ・見た目の問題でも、原因はロジックにあることが多い
+    ・修正は「1箇所ずつ原因を切り分ける」ことが重要

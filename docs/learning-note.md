@@ -575,3 +575,66 @@
     ・バグの原因は「値の残り方（状態の不整合）」であることが多い
     ・処理を1ヶ所（resetState）にまとめることで、バグの再発を防げる
     ・「とりあえず動く」のではなく、「状態が正しく管理されているか」を意識する必要がある
+
+## 26/04/07
+
+### プログレスバーが視覚的に反映されていないバグを修正
+
+▼ 目的
+    以前に実行していたタイマーの進行状況を視覚的にわかるようにするためのプログレスバーがアプリ画面上に反映されていないため、視覚的にわかるように修正する
+
+▼ 仕組み
+    『プログレスバー』は「残り時間」と「最初に設定した時間」の割合から進捗率を計算し、横幅（width）として反映することで実現する。
+
+    進捗率（％）は以下の式で求める：
+        進捗率 = 1 - （残り時間 ÷ 総時間）
+    
+    この値をCSSの width に反映させることで、バーが伸びていくように見える。
+
+▼ 具体的な方法
+    ①HTMLでプログレスバーの土台を作る
+        親要素（container）と子要素（bar）を用意する
+
+    ②CSSで見た目を整える
+        ・container：背景
+        ・bar：進捗部分（今回の場合は“緑”）
+        ・transition：滑らかなアニメーションを追加
+    
+    ③JavaScriptで進捗率を計算
+        state.remainingSeconds と state.totalSeconds を使用
+    
+    ④描画関数で width を更新
+        renderProgress() を updateDisplay() 内で呼び出す
+    
+    ⑤Start / Stop / Resume に対応
+        remainingSeconds を基準に endTime を再計算する
+
+▼ 使用したコード・技術
+    ・CSSアニメーション
+        #progressBar {
+            transition: width 1s linear;
+        }
+
+    ・進捗計算（JS）
+        const percent = (1 - state.remainingSeconds / state.totalSeconds) * 100;
+
+        progressBar.style.width = percent + "%";
+    
+    ・状態管理（state）（JS）
+        ・totalSeconds：初期時間（固定）
+        ・remainingSeconds：残り時間（変化）
+        ・endTime：終了時間
+
+▼ 重要なポイント
+    ・totalSeconds は途中で変更しない（基準値のため）
+    ・Resume時は remainingSeconds を使って再開する
+    ・endTime は「現在時刻 + 残り時間」で再計算する
+    ・UIは state を元に更新する（直接操作を減らす）
+    ・描画処理（render）は updateDisplay に集約する
+
+▼ 学んだこと
+    ・UIはCSSだけでは動かず、JavaScriptで状態を更新する必要がある
+    ・状態（state）と表示（UI）を分けて考えることが重要
+    ・「総時間」と「残り時間」を分離することでバグを防止する
+    ・Resume機能は「残り時間の扱い」が本質
+    ・ユーザーにとって自然な挙動（UX）を意識することが重要
