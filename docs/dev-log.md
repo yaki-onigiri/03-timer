@@ -690,3 +690,86 @@
 
     ・見た目の問題でも、原因はロジックにあることが多い
     ・修正は「1箇所ずつ原因を切り分ける」ことが重要
+
+## 2026/04/08
+
+目的
+    タイマーアプリのUI改善として、スマホでも操作しやすいレスポンシブデザインを実装する。
+
+実装内容
+
+    ①レイアウト調整（Flexbox導入）
+        ・.inputs と .buttons に display: flex を適用
+        ・PCでは横並びレイアウトに設定
+
+            .inputs {
+                display: flex;
+            }
+            
+            .buttons {
+                display: flex;
+            }
+
+    ②レスポンシブ対応
+        画面横幅480px以下で縦並びに変更
+            @media (max-width: 480px) {
+                .inputs {
+                    flex-direction: column;
+                }
+
+                .button {
+                    flex-direction: column;
+                }
+            }
+    
+    ③中央配置の調整
+        スマホ時に中央寄せを実装
+            align-items: center;
+
+    ④タップしやすいUIに改善
+        ・ボタン・入力欄のサイズを調整
+        ・高さ44px以上を確保
+    
+発生した問題
+    ①スマホサイズでも縦並びにならない
+    ②中央寄せにならない
+    ③要素の横幅が広がりすぎる
+    ④ボタン・入力欄が小さく操作しづらい
+
+原因
+    ①CSSクラス名の不一致
+        ・ .input / .inputs
+        ・ .button / .buttons
+
+    ②display:flex が適用されていない状態で flex-direction を使用していた
+
+    ③flex-direction による字句の変化を理解していなかった
+        ・column時に justify-content は縦方向に作用する
+    
+    ④flexのデフォルト挙動（要素が広がる）を考慮していなかった
+
+解決方法
+    ①クラス名をHTMLとCSSで統一
+
+    ②display:flex を前提としてレイアウトを再構築
+    
+    ③中央寄せを以下で修正
+        align-items: center;
+
+    ④横幅制御を追加
+        max-width: 100%;
+    
+    ⑤UIサイズ調整
+        height: 44px;
+    
+学んだこと
+    ・flex は「display:flex」が前提で動く
+    ・flex-direction によって軸が変わる
+    ・justify-content と align-items は役割が異なる
+    ・CSSが効かない原因はセレクタミスが多い
+    ・スマホUIでは「タップしやすさ」が重要
+
+感想
+    レスポンシブ対応は単に見た目を変える作業ではなく、「ユーザーが使いやすいUIを設計すること」だと理解した。
+
+    特に、『flex の軸の考え方』と『クラス名のミス』は今後も発生しやすいため、開発時には意識して確認する必要があると感じた。
